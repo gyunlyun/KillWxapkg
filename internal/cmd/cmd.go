@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/Ackites/KillWxapkg/internal/restore"
@@ -16,20 +17,57 @@ import (
 	"github.com/Ackites/KillWxapkg/internal/unpack"
 )
 
+// ParseWxid 解析小程序 id，避免手动输入
+func ParseWxid(root string) string {
+	var regAppId = regexp.MustCompile(`(wx[0-9a-f]{16})`)
+
+	// 匹配整个路径
+	matches := regAppId.FindStringSubmatch(root)
+	if len(matches) == 0 {
+		log.Printf("未能从输入目录找到小程序ID.")
+		return ""
+	}
+
+	Wxid := matches[1]
+	log.Printf("自动从输入目录找到小程序ID: %s\n", Wxid)
+	return Wxid
+}
+
 // ParseInput 解析输入文件
-func ParseInput(input, fileExt string) []string {
+func ParseInput(input, fileExt string, depth int) []string {
+	if depth <= 0 {
+		depth = 2 // 默认搜索深度为2
+	}
+
 	var inputFiles []string
-	if fileInfo, err := os.Stat(input); err == nil && fileInfo.IsDir() {
-		files, err := os.ReadDir(input)
-		if err != nil {
-			log.Fatalf("读取输入目录失败: %v", err)
+
+	// 递归搜索文件的辅助函数
+	var searchFiles func(dir string, currentDepth int)
+	searchFiles = func(dir string, currentDepth int) {
+		if currentDepth > depth {
+			return
 		}
+
+		files, err := os.ReadDir(dir)
+		if err != nil {
+			log.Printf("读取目录失败 %s: %v", dir, err)
+			return
+		}
+
 		for _, file := range files {
-			if !file.IsDir() && strings.HasSuffix(file.Name(), fileExt) {
-				inputFiles = append(inputFiles, filepath.Join(input, file.Name()))
+			fullPath := filepath.Join(dir, file.Name())
+			if file.IsDir() {
+				searchFiles(fullPath, currentDepth+1)
+			} else if strings.HasSuffix(file.Name(), fileExt) {
+				inputFiles = append(inputFiles, fullPath)
 			}
 		}
+	}
+
+	if fileInfo, err := os.Stat(input); err == nil && fileInfo.IsDir() {
+		searchFiles(input, 1)
 	} else {
+		// 如果输入不是目录，则按逗号分隔处理
 		inputFiles = strings.Split(input, ",")
 	}
 

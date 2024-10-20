@@ -9,20 +9,28 @@ import (
 	"github.com/Ackites/KillWxapkg/internal/restore"
 )
 
-func Execute(appID, input, outputDir, fileExt string, restoreDir bool, pretty bool, noClean bool, save bool, sensitive bool) {
+func GetAppID(input string) string {
+	// 调用 B 包中的 ParseWxid 函数
+	log.Printf("缺少参数 id，从输入路径匹配.")
+	appID := ParseWxid(input)
+	return appID // 返回 appID
+}
+
+func Execute(appID, input, outputDir, fileExt string, depth int, restoreDir bool, pretty bool, noClean bool, save bool, sensitive bool) {
 	// 存储配置
 	configManager := NewSharedConfigManager()
 	configManager.Set("appID", appID)
 	configManager.Set("input", input)
 	configManager.Set("outputDir", outputDir)
 	configManager.Set("fileExt", fileExt)
+	configManager.Set("depth", depth)
 	configManager.Set("restoreDir", restoreDir)
 	configManager.Set("pretty", pretty)
 	configManager.Set("noClean", noClean)
 	configManager.Set("save", save)
 	configManager.Set("sensitive", sensitive)
 
-	inputFiles := ParseInput(input, fileExt)
+	inputFiles := ParseInput(input, fileExt, depth)
 
 	if len(inputFiles) == 0 {
 		log.Println("未找到任何文件")
