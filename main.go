@@ -103,18 +103,14 @@ func main() {
 		return
 	}
 
-	if input == "" {
-		printUsage()
-		return
-	}
-
-	appID := cmd.GetAppID(input)
-
 	if appID == "" {
+		appID = cmd.GetAppID(input)
+	}
+
+	if appID == "" || input == "" {
 		printUsage()
 		return
 	}
-
 	// 执行命令
 	cmd.Execute(appID, input, outputDir, fileExt, depth, restoreDir, pretty, noClean, save, sensitive)
 }
