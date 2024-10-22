@@ -43,6 +43,7 @@ var (
 	scanMode   bool
 )
 
+// 让 logo 随机变色
 func uniqueColorAssignment(words []string) map[string]string {
 	rand.Seed(time.Now().UnixNano())
 	shuffledColors := rand.Perm(len(colors))
@@ -76,10 +77,10 @@ func init() {
 	flag.StringVar(&repack, "repack", "", "重新打包wxapkg文件")
 	flag.BoolVar(&watch, "watch", false, "是否监听将要打包的文件夹，并自动打包")
 	flag.BoolVar(&sensitive, "sensitive", false, "是否获取敏感数据")
-	flag.BoolVar(&scanMode, "scan", false, "扫描系统WeChat小程序目录")
+	flag.BoolVar(&scanMode, "scan", false, "扫描系统WeChat小程序目录\n不能与-ext、-hook 或 -watch 同时使用")
 }
 
-// 新增函数：处理单个路径
+// 批处理实现 scan 功能
 func processPath(path string, currentAppID string) error {
 	fmt.Printf("\n处理路径: %s\n", path)
 
@@ -116,7 +117,6 @@ func main() {
 
 	// 处理scan模式
 	if scanMode {
-		pretty = false // 设置pretty为true
 		scanner := scan.NewScanner()
 
 		if err := scanner.ScanApplets(); err != nil {

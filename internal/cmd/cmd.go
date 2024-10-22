@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Ackites/KillWxapkg/internal/restore"
 	"github.com/Ackites/KillWxapkg/internal/util"
@@ -82,20 +83,60 @@ func ParseInput(input, fileExt string, depth int) []string {
 }
 
 // DetermineOutputDir 确定输出目录
-func DetermineOutputDir(input, appID string) string {
+func normalizePath(path string) string {
+	// 清理路径中的 .. 和 .
+	path = filepath.Clean(path)
+
+	// 如果是相对路径，转换为绝对路径
+	if !filepath.IsAbs(path) {
+		if absPath, err := filepath.Abs(path); err == nil {
+			path = absPath
+		}
+	}
+
+	return path
+}
+
+func DetermineOutputDir(input, appID, outputDir string) string {
 	var baseDir string
 
-	if fileInfo, err := os.Stat(input); err == nil && fileInfo.IsDir() {
-		baseDir = input
+	// 规范化输出目录路径
+	if outputDir != "" {
+		baseDir = normalizePath(outputDir)
+
+		// 确保目录存在
+		if err := os.MkdirAll(baseDir, 0755); err != nil {
+			log.Printf("Failed to create output directory: %v", err)
+			return ""
+		}
 	} else {
-		baseDir = filepath.Dir(input)
+		// 处理输入目录
+		if fileInfo, err := os.Stat(input); err == nil && fileInfo.IsDir() {
+			baseDir = input
+		} else {
+			baseDir = filepath.Dir(input)
+		}
+		baseDir = normalizePath(baseDir)
 	}
 
+	// 生成子目录名
+	var subDir string
 	if appID == "" {
-		return filepath.Join(baseDir, "result")
+		timestamp := time.Now().Format("2006-01-02_15-04-05")
+		subDir = fmt.Sprintf("result_%s", timestamp)
+	} else {
+		subDir = appID
 	}
 
-	return filepath.Join(baseDir, appID)
+	finalPath := filepath.Join(baseDir, subDir)
+
+	// 确保最终目录存在
+	if err := os.MkdirAll(finalPath, 0755); err != nil {
+		log.Printf("Failed to create final directory: %v", err)
+		return ""
+	}
+
+	return finalPath
 }
 
 // ProcessFile 合并目录

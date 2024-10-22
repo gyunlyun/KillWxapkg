@@ -38,9 +38,8 @@ func Execute(appID, input, outputDir, fileExt string, depth int, restoreDir bool
 	}
 
 	// 确定输出目录
-	if outputDir == "" {
-		outputDir = DetermineOutputDir(input, appID)
-	}
+	outputDir = DetermineOutputDir(input, appID, outputDir)
+	log.Printf("输出路径：%s", outputDir)
 
 	var wg sync.WaitGroup
 	for _, inputFile := range inputFiles {
