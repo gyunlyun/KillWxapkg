@@ -1,0 +1,68 @@
+name: Go Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., v1.0.0)'
+        required: true
+        default: 'v0.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache: true
+      
+      - name: Get dependencies
+        run: go mod tidy
+
+      - name: Build for Windows
+        run: |
+          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o build-windows-amd64.exe
+          mkdir -p releases
+          zip -j releases/build-windows-amd64.zip build-windows-amd64.exe
+
+      - name: Build for Linux
+        run: |
+          GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o build-linux-amd64
+          mkdir -p releases
+          zip -j releases/build-linux-amd64.zip build-linux-amd64
+
+      - name: Build for MacOS
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o build-darwin-amd64
+          mkdir -p releases
+          zip -j releases/build-darwin-amd64.zip build-darwin-amd64
+
+      - name: Generate checksum
+        run: |
+          cd releases
+          sha256sum *.zip > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Release ${{ github.event.inputs.version }}
+          files: |
+            releases/*.zip
+            releases/checksums.txt
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
