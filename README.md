@@ -1,7 +1,7 @@
 # KillWxapkg
 
 > 纯Golang实现，一个用于自动化反编译微信小程序的工具，小程序安全利器，
-> 自动解密，解包，可还原工程目录，支持微信开发者工具运行
+> 自动解密，（批量）解包，可还原工程目录，支持微信开发者工具运行
 
 [![stable](https://img.shields.io/badge/stable-stable-green.svg)](https://github.com/Ackites/KillWxapkg)
 [![license](https://img.shields.io/github/license/Ackites/KillWxapkg)]()
