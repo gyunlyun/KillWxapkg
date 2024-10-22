@@ -1,11 +1,16 @@
 name: Go Release
-
 on:
   push:
-    # 创建 tag 时
     tags:
       - 'v*'
-
+  # 添加手动触发
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., v1.0.0)'
+        required: true
+        default: 'v0.0.0'
+      
 permissions:
   contents: write
 
@@ -14,25 +19,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        # 检出代码
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Create Tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git tag ${{ github.event.inputs.version }}
+          
       - name: Install upx
         run: sudo apt-get install -y upx
-
+        
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: 'stable'
-
+          
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          # either 'goreleaser' (default) or 'goreleaser-pro'
           distribution: goreleaser
-          # 'latest', 'nightly', or a semver
           version: 'latest'
           args: release --clean
         env:
